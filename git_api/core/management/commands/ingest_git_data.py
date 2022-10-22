@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 print(f"get pull request for repo {repo_name}")
                 pulls = repository.get_pulls(state="all") 
                 for pr in pulls:
-                    issue_number, pr_title,state,name= pr.number, pr.title,pr.state,pr.user.login
+                    issue_number, pr_title,state,name, created_at, closed_at = pr.number, pr.title,pr.state,pr.user.login, pr.created_at, pr.closed_at
                     pull_requests.add(
                         {
                             'user':name,
@@ -34,6 +34,8 @@ class Command(BaseCommand):
                             "pr_title": pr_title,
                             "state": state,
                             "repo_name": repo_name,
+                            "created_at": created_at,
+                            "closed_at": closed_at
                         }
                     )
                 print(f"Ingested pull request")
@@ -46,5 +48,7 @@ class Command(BaseCommand):
                                 'name': issue.user.login,
                                 'state': issue.state,
                                 "repo_name": repo_name,
+                                "created_at": issue.created_at,
+                                "closed_at": issue.closed_at
                                 })
                 print(f"Ingested GitIssues")
