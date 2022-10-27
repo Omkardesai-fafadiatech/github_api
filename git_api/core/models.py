@@ -30,3 +30,4 @@ class GitIssues(MongoDBModel):
 class GitPullRequests(MongoDBModel):
     def __init__(self):
         self.collection = settings.DB["pr"]
+
