@@ -10,13 +10,16 @@ class IssuesMetrics(APIView):
     git_issues = GitIssues()
     results = defaultdict(int)
 
+    """
+    This is issue metrics
+    """
+    
     def get_username_issues_status(self, username):
         for row in self.git_issues.find({'name': {'$regex': f"{username}", "$options": "i"}}):
             self.results[row['state']] += 1
         return self.results
 
     def get_oldest_issues_with_name(self, name, status, metrics, avg_cycle):
-        print("Hello")
         issues = {'title': [], 'dates': [], 'counts': []}
         sorted_data = self.git_issues.find(
             {'name': {'$regex': f"{name}", "$options": "i"},
@@ -35,8 +38,9 @@ class IssuesMetrics(APIView):
         status = request.GET.get('status', None)
         metrics = request.GET.get('metrics', None)
         avg_cycle = request.GET.get('avg_cycle', None)
-        # if metrics==agg_issues_counts:
-        #     return Response(self.get_username_issues_status(username))
+        if metrics=="agg_issues_counts":
+            return Response(self.get_username_issues_status(username))
         if metrics == 'oldest':
             print(username, status, metrics)
             return Response(self.get_oldest_issues_with_name(username, status, metrics, avg_cycle))
+
