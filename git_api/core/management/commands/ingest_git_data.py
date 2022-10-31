@@ -12,7 +12,7 @@ class Command(BaseCommand):
         issues = GitIssues()
         pull_requests = GitPullRequests()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()
@@ -31,9 +31,9 @@ class Command(BaseCommand):
                         {   
                             "user": pr.user.login,
                             "pr_title": pr.title,
-                            "issue_number": pr.number,
+                            "pr_number": pr.number,
                             "assignees":[i.login for i in pr.assignees],
-                            "status": pr.state,
+                            "pr_status": pr.state,
                             "repo_name": repo_name,
                             "created_at": pr.created_at,
                             "closed_at": pr.closed_at
@@ -45,10 +45,10 @@ class Command(BaseCommand):
                 for issue in all_issues:
                     issues.add({
                                 "user": issue.user.login,
-                                "title": issue.title,
+                                "issue_title": issue.title,
                                 "assignees":[i.login for i in issue.assignees],
-                                "number": issue.number,
-                                "status": issue.state,
+                                "issue_number": issue.number,
+                                "issue_status": issue.state,
                                 "repo_name": repo_name,
                                 "created_at": issue.created_at,
                                 "closed_at": issue.closed_at
