@@ -28,11 +28,11 @@ class Command(BaseCommand):
                 pulls = repository.get_pulls(state="all")
                 for pr in pulls:
                     pull_requests.add(
-                        {   
+                        {
                             "user": pr.user.login,
                             "pr_title": pr.title,
                             "pr_number": pr.number,
-                            "assignees":[i.login for i in pr.assignees],
+                            "assignees": [i.login for i in pr.assignees],
                             "pr_status": pr.state,
                             "repo_name": repo_name,
                             "created_at": pr.created_at,
@@ -44,14 +44,13 @@ class Command(BaseCommand):
                 all_issues = repository.get_issues(state="all")
                 for issue in all_issues:
                     issues.add({
-                                "user": issue.user.login,
-                                "issue_title": issue.title,
-                                "assignees":[i.login for i in issue.assignees],
-                                "issue_number": issue.number,
-                                "issue_status": issue.state,
-                                "repo_name": repo_name,
-                                "created_at": issue.created_at,
-                                "closed_at": issue.closed_at
+                        "user": issue.user.login,
+                        "issue_title": issue.title,
+                        "assignees": [i.login for i in issue.assignees],
+                        "issue_number": issue.number,
+                        "issue_status": issue.state,
+                        "repo_name": repo_name,
+                        "created_at": issue.created_at,
+                        "closed_at": issue.closed_at
                     })
                 print(f"Ingested GitIssues")
-
