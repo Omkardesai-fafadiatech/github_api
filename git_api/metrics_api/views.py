@@ -19,18 +19,18 @@ class IssuesMetrics(APIView):
         results = defaultdict(int)
         for row in self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"}}):
             print(row)
-            results[row['status']] += 1
+            results[row['issue_status']] += 1
         return results
 
     def get_oldest_issues_with_name(self, name, status, metrics, avg_cycle):
         issues = {'title': [], 'dates': [], 'counts': []}
         sorted_data = self.git_issues.find(
             {'user': {'$regex': f"{name}", "$options": "i"},
-             'status': status, 'created_at': {'$gte': get_iso_time(avg_cycle), }})
+             'issue_status': status, 'created_at': {'$gte': get_iso_time(avg_cycle), }})
         sorted_data.sort(key=lambda p: p['created_at'], )
         for row in sorted_data:
             print(row)
-            issues['title'].append(row['title'])
+            issues['title'].append(row['issue_title'])
             issues['dates'].append(row['created_at'])
         issues['counts'].append(len(issues['title']))
         # sorted_results = get_oldest_issues(issues)
@@ -58,7 +58,7 @@ class PersonMetrics(APIView):
     git_pr = GitPullRequests()
 
 
-    def get_username_average_cycle(self, username, avg_cycle1, status='closed'):
+    def get_username_average_cycle(self, username, avg_cycle1, status):
         results = {'username': [], 'average_time': []}
         completion_time = {'issue_number': [], 'time_taken': [] }
         time_list = []
@@ -69,11 +69,8 @@ class PersonMetrics(APIView):
         for row in sorted_data:
             created_at = row['created_at']
             closed_at = row['closed_at']
-            print(row['issue_status'])
             time_taken = closed_at - created_at
             time_list.append(time_taken)
-            issue_number = row['issue_number']
-            print(f"issue_number: {issue_number}")
             completion_time['issue_number'].append(row['issue_number'])
             completion_time['time_taken'].append(str(time_taken))
 
@@ -92,11 +89,8 @@ class PersonMetrics(APIView):
                 open_count += 1
             elif row['issue_status'] == "closed":
                 closed_count += 1
-        print(f"open_count: {open_count}")
-        print(f"closed_count: {closed_count}")
         total_count = open_count+closed_count
         open_to_close_ratio = (closed_count/total_count)*100
-        print(f"open_to_closed: {open_to_close_ratio}")
         results['username'].append(row['user'])
         results['open_to_close_ratio'] = f"{open_to_close_ratio}%"
         return results
@@ -108,14 +102,10 @@ class PersonMetrics(APIView):
 
         for row in self.git_pr.find({'user': {'$regex': f"{username}", "$options": "i"},'pr_status': status, }):
             created_at = row['created_at']
-            print(f"created_at: {created_at}")
             closed_at = row['closed_at']
-            print(f"closed_at: {closed_at}")
             time_taken = closed_at - created_at
-            print(f"time_taken: {time_taken}")
             time_list.append(time_taken)
             pr_number = row['pr_number']
-            print(f"pr_number: {pr_number}")
             completion_time['pr_number'].append(row['pr_number'])
             completion_time['time_taken'].append(str(time_taken))
 
@@ -131,7 +121,6 @@ class PersonMetrics(APIView):
         avg_cycle1 = request.GET.get('avg_cycle', None)
 
         if metrics=="average_cycle_time":
-            print(username, status, metrics, avg_cycle1)
             return Response(self.get_username_average_cycle(username, avg_cycle1, status))
         if metrics == "open_to_close_ratio":
             return Response(self.open_to_close_ratio(username))

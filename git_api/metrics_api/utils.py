@@ -1,9 +1,6 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from cmath import rect, phase
-from math import radians, degrees
-
 
 def get_iso_time(avg_cycle='1 month'):
     now = datetime.now()

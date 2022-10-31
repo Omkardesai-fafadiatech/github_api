@@ -12,7 +12,7 @@ class Command(BaseCommand):
         issues = GitIssues()
         pull_requests = GitPullRequests()
 
-        access_token = "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"
+        access_token = "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"
 
         login = Github(access_token)
         user = login.get_user()
