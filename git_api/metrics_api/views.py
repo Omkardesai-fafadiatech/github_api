@@ -69,6 +69,7 @@ class PersonMetrics(APIView):
         for row in sorted_data:
             created_at = row['created_at']
             closed_at = row['closed_at']
+            print(row['issue_status'])
             time_taken = closed_at - created_at
             time_list.append(time_taken)
             issue_number = row['issue_number']
@@ -125,7 +126,7 @@ class PersonMetrics(APIView):
 
     def get(self, request, format=None):
         username = request.GET.get('username', None)
-        status = request.GET.get('status')
+        status = request.GET.get('status', "closed")
         metrics = request.GET.get('metrics', None)
         avg_cycle1 = request.GET.get('avg_cycle', None)
 
@@ -133,8 +134,8 @@ class PersonMetrics(APIView):
             print(username, status, metrics, avg_cycle1)
             return Response(self.get_username_average_cycle(username, avg_cycle1, status))
         if metrics == "open_to_close_ratio":
-            return Response(self.open_to_close_ratio(username, avg_cycle1))
+            return Response(self.open_to_close_ratio(username))
         if metrics == "pr_average_cycle_time":
-            return Response(self.pr_average_cycle_time(username, status, avg_cycle1))
+            return Response(self.pr_average_cycle_time(username, status))
 
     
