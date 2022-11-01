@@ -80,37 +80,47 @@ class PersonMetrics(APIView):
             return results, completion_time
         return "No records found", results, completion_time
 
-    def open_to_close_ratio(self, username):
+    def open_to_close_ratio(self, username, avg_cycle):
         results = {'username': [], 'open_to_close_ratio': []}
         open_count = int()
         closed_count = int()
-        for row in self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"}}):
-            if row['issue_status'] == "open":
-                open_count += 1
-            elif row['issue_status'] == "closed":
-                closed_count += 1
-        total_count = open_count+closed_count
-        open_to_close_ratio = (closed_count/total_count)*100
-        results['username'].append(row['user'])
-        results['open_to_close_ratio'] = f"{open_to_close_ratio}%"
+        sorted_data = self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"}, 
+                                         'created_at': {'$gte': get_iso_time(avg_cycle),}})
+        print(sorted_data)
+        if len(sorted_data) != 0:
+            sorted_data.sort(key=lambda p: p['created_at'], )
+            for row in sorted_data:
+                if row['issue_status'] == "open":
+                    open_count += 1
+                elif row['issue_status'] == "closed":
+                    closed_count += 1
+            total_count = open_count+closed_count
+            open_to_close_ratio = (closed_count/total_count)*100
+            results['username'].append(row['user'])
+            results['open_to_close_ratio'] = f"{open_to_close_ratio}%"
+            return results
         return results
 
-    def pr_average_cycle_time(self, username, status='closed'):
+    def pr_average_cycle_time(self, username, avg_cycle, status='closed'):
         results = {'username': [], 'average_time': []}
         completion_time = {'pr_number': [], 'time_taken': []}
         time_list = []
 
-        for row in self.git_pr.find({'user': {'$regex': f"{username}", "$options": "i"}, 'pr_status': status, }):
-            created_at = row['created_at']
-            closed_at = row['closed_at']
-            time_taken = closed_at - created_at
-            time_list.append(time_taken)
-            completion_time['pr_number'].append(row['pr_number'])
-            completion_time['time_taken'].append(str(time_taken))
+        sorted_data = self.git_pr.find({'user': {'$regex': f"{username}", "$options": "i"}, 'pr_status': status, 
+                                     'created_at': {'$gte': get_iso_time(avg_cycle),}})
+        if len(sorted_data) != 0:
+            for row in sorted_data:
+                created_at = row['created_at']
+                closed_at = row['closed_at']
+                time_taken = closed_at - created_at
+                time_list.append(time_taken)
+                completion_time['pr_number'].append(row['pr_number'])
+                completion_time['time_taken'].append(str(time_taken))
 
-        average_time = sum(time_list, timedelta())/len(time_list)
-        results['username'].append(row['user'])
-        results['average_time'].append(str(average_time))
+            average_time = sum(time_list, timedelta())/len(time_list)
+            results['username'].append(row['user'])
+            results['average_time'].append(str(average_time))
+            return results, completion_time
         return results, completion_time
 
     def get(self, request, format=None):
@@ -122,6 +132,6 @@ class PersonMetrics(APIView):
         if metrics == "average_cycle_time":
             return Response(self.get_username_average_cycle(username, avg_cycle, status))
         if metrics == "open_to_close_ratio":
-            return Response(self.open_to_close_ratio(username))
+            return Response(self.open_to_close_ratio(username, avg_cycle))
         if metrics == "pr_average_cycle_time":
-            return Response(self.pr_average_cycle_time(username, status))
+            return Response(self.pr_average_cycle_time(username, avg_cycle, status))
