@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.models import GitIssues, GitPullRequests
 from collections import defaultdict
-from .utils import get_iso_time, get_oldest_issues  # , meanTime
+from .utils import get_iso_time, get_oldest_issues
 from datetime import datetime, timedelta
 
 
@@ -21,30 +21,35 @@ class IssuesMetrics(APIView):
             results[row['issue_status']] += 1
         return results
 
-    def get_oldest_issues_with_name(self, name, status, metrics, avg_cycle):
-        issues = {'title': [], 'dates': [], 'counts': []}
-        sorted_data = self.git_issues.find(
-            {'user': {'$regex': f"{name}", "$options": "i"},
-             'issue_status': status, 'created_at': {'$gte': get_iso_time(avg_cycle), }})
-        if len(sorted_data) != 0:
-            sorted_data.sort(key=lambda p: p['created_at'], )
-            for row in sorted_data:
-                issues['title'].append(row['issue_title'])
-                issues['dates'].append(row['created_at'])
-            issues['counts'].append(len(issues['title']))
-            # sorted_results = get_oldest_issues(issues)
-            return issues
-        return issues
+    def get_oldest_issues_with_name(self, name, status, metrics,):
+        cycle_comp_git = ["7 days", "14 days", "30 days", "90 days"]
+        all_data = {}
+        for per_cyc_data in cycle_comp_git:
+            issues = {"avg_cycle_of": [], 'title': [], 'dates': [], 'counts': []}
+            sorted_data = self.git_issues.find(
+                {'user': {'$regex': f"{name}", "$options": "i"},
+                 'issue_status': status, 'created_at': {'$gte': get_iso_time(per_cyc_data), }})
+            if len(sorted_data) != 0:
+                sorted_data.sort(key=lambda p: p['created_at'],)
+                for row in sorted_data:
+                    issues['title'].append(row['issue_title'])
+                    issues['dates'].append(row['created_at'])
+                issues['counts'].append(len(issues['title']))
+
+                all_data[per_cyc_data] = issues
+            else:
+                all_data[per_cyc_data] = "No records found."
+        return all_data
 
     def get(self, request, format=None):
         username = request.GET.get('username', None)
         status = request.GET.get('status', None)
         metrics = request.GET.get('metrics', None)
-        avg_cycle = request.GET.get('avg_cycle', None)
+
         if metrics == "agg_issues_counts":
             return Response(self.get_username_issues_status(username))
         if metrics == 'oldest_issues':
-            return Response(self.get_oldest_issues_with_name(username, status, metrics, avg_cycle))
+            return Response(self.get_oldest_issues_with_name(username, status, metrics, ))
 
 
 class PersonMetrics(APIView):
@@ -84,8 +89,8 @@ class PersonMetrics(APIView):
         results = {'username': [], 'open_to_close_ratio': []}
         open_count = int()
         closed_count = int()
-        sorted_data = self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"}, 
-                                         'created_at': {'$gte': get_iso_time(avg_cycle),}})
+        sorted_data = self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"},
+                                            'created_at': {'$gte': get_iso_time(avg_cycle), }})
         print(sorted_data)
         if len(sorted_data) != 0:
             sorted_data.sort(key=lambda p: p['created_at'], )
@@ -106,8 +111,8 @@ class PersonMetrics(APIView):
         completion_time = {'pr_number': [], 'time_taken': []}
         time_list = []
 
-        sorted_data = self.git_pr.find({'user': {'$regex': f"{username}", "$options": "i"}, 'pr_status': status, 
-                                     'created_at': {'$gte': get_iso_time(avg_cycle),}})
+        sorted_data = self.git_pr.find({'user': {'$regex': f"{username}", "$options": "i"}, 'pr_status': status,
+                                        'created_at': {'$gte': get_iso_time(avg_cycle), }})
         if len(sorted_data) != 0:
             for row in sorted_data:
                 created_at = row['created_at']
