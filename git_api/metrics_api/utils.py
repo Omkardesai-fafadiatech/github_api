@@ -4,10 +4,12 @@ from dateutil.relativedelta import relativedelta
 
 def get_iso_time(avg_cycle='1 month'):
     now = datetime.now()
-    if avg_cycle in 'month' or 'months':
+    if avg_cycle.find("month" or "months") != -1:
+        print("month", avg_cycle)
         avg_cycle = avg_cycle.split(' ')[0]
         last_month_date = now + relativedelta(months=-int(avg_cycle))
     else:
+        print("days", avg_cycle)
         avg_cycle = avg_cycle.split(' ')[0]
         last_month_date = now + relativedelta(days=-int(avg_cycle))
 

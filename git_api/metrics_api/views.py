@@ -1,4 +1,5 @@
 from multiprocessing.util import close_all_fds_except
+from webbrowser import get
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.models import GitIssues, GitPullRequests
@@ -25,12 +26,14 @@ class IssuesMetrics(APIView):
         sorted_data = self.git_issues.find(
             {'user': {'$regex': f"{name}", "$options": "i"},
              'issue_status': status, 'created_at': {'$gte': get_iso_time(avg_cycle), }})
-        sorted_data.sort(key=lambda p: p['created_at'], )
-        for row in sorted_data:
-            issues['title'].append(row['issue_title'])
-            issues['dates'].append(row['created_at'])
-        issues['counts'].append(len(issues['title']))
-        # sorted_results = get_oldest_issues(issues)
+        if len(sorted_data) != 0:
+            sorted_data.sort(key=lambda p: p['created_at'], )
+            for row in sorted_data:
+                issues['title'].append(row['issue_title'])
+                issues['dates'].append(row['created_at'])
+            issues['counts'].append(len(issues['title']))
+            # sorted_results = get_oldest_issues(issues)
+            return issues
         return issues
 
     def get(self, request, format=None):
@@ -58,28 +61,29 @@ class PersonMetrics(APIView):
         results = {'username': [], 'average_time': []}
         completion_time = {'issue_number': [], 'time_taken': []}
         time_list = []
+        sorted_data = self.git_issues.find(
+            {'user': {'$regex': f"{username}", "$options": "i"},
+             'issue_status': status, 'created_at': {'$gte': get_iso_time(avg_cycle1), }})
 
-        sorted_data = self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"},
-                                            'issue_status': status, 'created_at': {'$gte': get_iso_time(avg_cycle1), }})
-        sorted_data.sort(key=lambda p: p['created_at'], )
-        for row in sorted_data:
-            created_at = row['created_at']
-            closed_at = row['closed_at']
-            time_taken = closed_at - created_at
-            time_list.append(time_taken)
-            completion_time['issue_number'].append(row['issue_number'])
-            completion_time['time_taken'].append(str(time_taken))
-
-        average_time = sum(time_list, timedelta())/len(time_list)
-        results['username'].append(row['user'])
-        results['average_time'].append(str(average_time))
-        return results, completion_time
+        if len(sorted_data) != 0:
+            sorted_data.sort(key=lambda p: p['created_at'], )
+            for row in sorted_data:
+                created_at = row['created_at']
+                closed_at = row['closed_at']
+                time_taken = closed_at - created_at
+                time_list.append(time_taken)
+                completion_time['issue_number'].append(row['issue_number'])
+                completion_time['time_taken'].append(str(time_taken))
+            average_time = sum(time_list, timedelta())/len(time_list)
+            results['username'].append(row['user'])
+            results['average_time'].append(str(average_time))
+            return results, completion_time
+        return "No records found", results, completion_time
 
     def open_to_close_ratio(self, username):
         results = {'username': [], 'open_to_close_ratio': []}
         open_count = int()
         closed_count = int()
-
         for row in self.git_issues.find({'user': {'$regex': f"{username}", "$options": "i"}}):
             if row['issue_status'] == "open":
                 open_count += 1
