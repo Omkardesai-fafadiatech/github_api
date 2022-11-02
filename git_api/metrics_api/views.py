@@ -1,11 +1,9 @@
-from multiprocessing.util import close_all_fds_except
-from webbrowser import get
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.models import GitIssues, GitPullRequests
 from collections import defaultdict
 from .utils import get_iso_time, get_oldest_issues
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 
 class IssuesMetrics(APIView):
@@ -45,7 +43,6 @@ class IssuesMetrics(APIView):
         username = request.GET.get('username', None)
         status = request.GET.get('status', None)
         metrics = request.GET.get('metrics', None)
-
         if metrics == "agg_issues_counts":
             return Response(self.get_username_issues_status(username))
         if metrics == 'oldest_issues':
