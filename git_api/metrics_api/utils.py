@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 from dateutil.relativedelta import relativedelta
-
+from collections import OrderedDict
 
 def get_iso_time(avg_cycle='1 month'):
     now = datetime.now()
@@ -22,60 +22,15 @@ def get_oldest_issues(results, top=3):
     sorted_list = sorted(results.items())
     # sorted_res = results.sort(key=operator.itemgetter('date'))
     return sorted_list
-# total_issue_counts += 1
-    # td = row['created_at'].strftime("%b-%y")
-    # if td not in results[f"{time_duration}_based"]:
-    #     results[f"{time_duration}_based"].append(td)
-    # if row["closed_at"] != None:
-    #     time_taken = row['closed_at'].month - row["created_at"].month
-    #     if time_taken != 0:
-    #         results[f"done_per_{time_duration}"].extend(0 for i in range(time_taken+1))
-    #         results[f"done_per_{time_duration}"][time_taken] += 1
-    #     elif row['created_at']
-    #     else:
-    #         done+=1
-    # elif
 
-    # print(row)
-    # counts_per_cycle += 1
-    # td = row['created_at'].strftime("%b-%y")
-    # total_issue_counts += 1
-    # if td not in results[f"{time_duration}_based"]:
-    #     print("that")
-    #     results[f"{time_duration}_based"].append(td)
-    # if row["closed_at"] != None:
-    #     print(row, "inner")
-    #     time_taken = row['closed_at'].month - row["created_at"].month
-    #     counts_per_cycle += 1
-    #     if time_taken != 0:
-    #         results[f"done_per_{time_duration}"].extend(0 for i in range(time_taken+1))
-    #         results[f"done_per_{time_duration}"][time_taken] = +1
-    #     # [f"total_per_{time_duration}"].append(counts_per_cycle)
-    #     print(results)
-
-    # elif results[len(f"{time_duration}_based")-2] != td:
-    #     print("thsi")
-    #     results[f"total_per_{time_duration}"].append(counts_per_cycle)
-    #     results[f"done_per_{time_duration}"].append(done)
-    #     if done < counts_per_cycle:
-    #         counts_per_cycle = counts_per_cycle-done
-    #         done = 0
-    #     else:
-    #         counts_per_cycle = 0
-    #         done = 0
-    # total_issue_counts += 1
-    #     elif results[len(results[f"{time_duration}_based"])-1] == td and row["closed_at"] != None:
-    #         counts_per_cycle += 1
-    #         done += 1
-    #     elif results[len(f"{time_duration}_based")-2] != td:
-    #         results[f"total_per_{time_duration}"].append(counts_per_cycle)
-    #         results[f"done_per_{time_duration}"].append(done)
-    #         if done < counts_per_cycle:
-    #             counts_per_cycle = counts_per_cycle-done
-    #             done = 0
-    #         else:
-    #             counts_per_cycle = 0
-    #             done = 0
-    #     total_issue_counts += 1
-    # results["total_issue_counts"].append(total_issue_counts)
-    # return results
+def fill_months(start_month,end_month):
+    dt=[start_month,end_month]
+    start, end = [datetime.strptime(_, "%b-%y" ) for _ in dt]
+    print(end)
+    end=end+relativedelta(months=1)
+    ordered_months=OrderedDict(((start + timedelta(_)).strftime(r"%b-%y"), None) for _ in range((end-start).days)).keys()
+    return {i:0 for i in list(ordered_months)}
+def fetch_first_end_month(data):
+    start_month=data[0]["created_at"].strftime(r"%b-%y")
+    end_month=data[-1]["created_at"].strftime(r"%b-%y")
+    return start_month,end_month

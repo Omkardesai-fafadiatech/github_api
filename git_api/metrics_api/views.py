@@ -2,9 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from core.models import GitIssues, GitPullRequests
 from collections import defaultdict
-from .utils import get_iso_time, get_oldest_issues
+from .utils import get_iso_time, get_oldest_issues, fill_months, fetch_first_end_month
 from datetime import timedelta
 from dateutil import relativedelta
+from collections import defaultdict
 
 
 class IssuesMetrics(APIView):
@@ -41,48 +42,28 @@ class IssuesMetrics(APIView):
         return all_data
 
     def burndown_repo(self, repo_name, time_duration):
-        results = {"repo_name": f"{repo_name}", f"{time_duration}_based": [],
-                   "total_issue_counts": "", f"total_per_{time_duration}": [], f"done_per_{time_duration}": []}
-        total_issue_counts, counts_per_cycle, done = (0, 0, 0)
-        per_month_cycle = 0
-        curr_month_counts = 0
-        curr_month = 0
-        for row in sorted(
-                self.git_issues.find({'repo_name': {"$regex": repo_name, "$options": "i"}}),
-                key=lambda p: p["created_at"]):
+        results = {"repo_name": f"{repo_name}", f"estimated_time_{time_duration}_based": [],
+                   "total_issue_counts": "",  f"done_per_{time_duration}": {}}
+        total_issue_counts = 0
+        sorted_data = sorted(
+            self.git_issues.find({'repo_name': {"$regex": repo_name, "$options": "i"}}),
+            key=lambda p: p["created_at"])
+        for row in sorted_data:
             total_issue_counts += 1
+        results["total_issue_counts"] = total_issue_counts
+        first_month, end_month = fetch_first_end_month(sorted_data)
+        ordered_months = fill_months(first_month, end_month)
+        results[f"done_per_{time_duration}"] = ordered_months
         for row in sorted(
                 self.git_issues.find({'repo_name': {"$regex": repo_name, "$options": "i"}}),
                 key=lambda p: p["created_at"]):
-            print(row)
             td = row['created_at'].strftime("%b-%y")
-            if td not in results[f"{time_duration}_based"]:
-                results[f"{time_duration}_based"].append(td)
-            # if row["created_at"].month== row["closed_at"].month:
-            #     per_month_cycle= total_issue_counts-1
-            if row["closed_at"] != None:
-                closed_same_month, closed_different_month = (0, 0)
-
-                if row['closed_at'].month-row['created_at'].month == 0:
-                    curr_month_counts += 1
-
-                elif row['closed_at'].month-row['created_at'].month != 0:
-                    print(results)
-                    print(row['closed_at'].month, row['created_at'].month)
-                    time_taken = row['closed_at'].month - row["created_at"].month
-                    print(time_taken)
-                    print(len(results[f"done_per_{time_duration}"]), time_taken)
-                    print(len(results[f"done_per_{time_duration}"])+1 < time_taken)
-                    if len(results[f"done_per_{time_duration}"]) < time_taken:
-                        print("inner")
-                        results[f"done_per_{time_duration}"].extend([0 for i in range(time_taken+1)])
-                        print(results)
-                    results[f"done_per_{time_duration}"][time_taken] += 1
-                    print(results)
-            if curr_month != td and curr_month != 0:
-                results[f"done_per_{time_duration}"].append(total_issue_counts-curr_month_counts)
-            curr_month = row['created_at'].strftime("%b-%y")
-        results["total_issue_counts"] = total_issue_counts
+            if td not in results[f"done_per_{time_duration}"].keys():
+                results[f"done_per_{time_duration}"][td] = 0
+            elif row["closed_at"] != None:
+                results[f"done_per_{time_duration}"][row["closed_at"].strftime("%b-%y")] += 1
+        for key, val in results[f"done_per_{time_duration}"].items():
+            total_issue_counts, results[f"done_per_{time_duration}"][key] = total_issue_counts-val, total_issue_counts-val
         return results
 
     def get(self, request, format=None):
